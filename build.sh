@@ -11,7 +11,8 @@ if [ ! -d "build" ]; then
 fi
 
 cd build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_TEST=ON ..
 
 # execute cmake when you using colorgcc
 # CC="colorgcc /usr/bin/gcc" CXX="colorgcc /usr/bin/g++" cmake -DCMAKE_BUILD_TYPE=Debug ..
@@ -33,7 +34,7 @@ fi
 echo "*******************************************************************************"
 echo "start run tests..."
 
-./options --gtest_color=yes $1 $2
+./test/options_test --gtest_color=yes $1 $2
 
 if [ $? -ne 0 ]; then
     echo "build ${working_path} fail"

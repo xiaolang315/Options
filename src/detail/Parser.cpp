@@ -12,8 +12,6 @@ namespace options {
         make_vector(Iterator i, Iterator e)
         {
             std::vector<std::basic_string<charT> > result;
-            // Some compilers don't have templated constructor for
-            // vector, so we can't create vector from (argv+1, argv+argc) range
             for(; i != e; ++i)
                 result.push_back(*i);
             return result;
@@ -27,11 +25,8 @@ namespace options {
 
     Basic_command_line_parser::
 	Basic_command_line_parser(int argc, const char* const argv[])
-    : detail::Cmdline(
-// Explicit template arguments are required by gcc 3.3.1
-// (at least mingw version), and do no harm on other compilers.
-    // to_internal(detail::make_vector<charT, const charT* const*>(argv+1, argv+argc+!argc)))
-    detail::make_vector<char, const char* const*>(argv+1, argv+argc+!argc))
+        : detail::Cmdline(
+                      detail::make_vector<char, const char* const*>(argv+1, argv+argc+!argc))
 	{
 
 	}
@@ -54,16 +49,9 @@ namespace options {
     ParsedOptions
     Basic_command_line_parser::run()
     {
-        // save the canonical prefixes which were used by this cmdline parser
-        //    eventually inside the parsed results
-        //    This will be handy to format recognisable options
-        //    for diagnostic messages if everything blows up much later on
-        ParsedOptions result(m_desc, 0);//detail::Cmdline::get_canonical_option_prefix());
+        ParsedOptions result(m_desc, 0);
         result.options = detail::Cmdline::run();
 
-
-        // Presense of parsed_options -> wparsed_options conversion
-        // does the trick.
         return ParsedOptions(result);
     }
 

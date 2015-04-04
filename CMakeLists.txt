@@ -2,6 +2,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT("options")
 
+set(ENABLE_TEST OFF CACHE BOOL "Enable the test")
+
 MACRO(sort_files source_files)
   SET(sgbd_cur_dir ${CMAKE_CURRENT_SOURCE_DIR})
   FOREACH(sgbd_file ${${source_files}})
@@ -33,25 +35,13 @@ IF(UNIX)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
 ENDIF(UNIX)
 
-FILE(GLOB_RECURSE all_files 
-include/*.h
-include/*.hpp
-include/*.hxx
-include/*.tcc
-src/*.cpp
-src/*.cc
-src/*.cxx
-src/*.c
-src/*.C
-test/*.cpp
-test/*.cc
-test/*.cxx
-test/*.c
-test/*.C)
+set(OPTIONS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-sort_files(all_files)
+install(DIRECTORY include DESTINATION include)
 
-add_executable(options  ${all_files})
+add_subdirectory(src)
 
-target_link_libraries(options infra hamcrest magellan stdc++)
+if(ENABLE_TEST)
+    add_subdirectory(test)
+endif()
 

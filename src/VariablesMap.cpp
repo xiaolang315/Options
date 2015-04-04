@@ -1,15 +1,7 @@
-// Copyright Vladimir Prus 2002-2004.
-// Distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE_1_0.txt
-// or copy at http://www.boost.org/LICENSE_1_0.txt)
-
-
-#define BOOST_PROGRAM_OPTIONS_SOURCE
-
-#include "../include/program_options/Parsers.hpp"
-#include "../include/program_options/OptionsDescription.hpp"
-#include "../include/program_options/ValueSemantic.hpp"
-#include "../include/program_options/VariablesMap.hpp"
+#include "program_options/Parsers.hpp"
+#include "program_options/OptionsDescription.hpp"
+#include "program_options/ValueSemantic.hpp"
+#include "program_options/VariablesMap.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -18,28 +10,19 @@ namespace  options {
 
     using namespace std;
 
-    // First, performs semantic actions for 'oa'. 
-    // Then, stores in 'm' all options that are defined in 'desc'. 
-     
-    void store(const ParsedOptions& options, VariablesMap& map,
-               bool utf8)
+    void store(const ParsedOptions& options, VariablesMap& map)
     {       
         assert(options.description);
 
         const OptionsDescription& desc = *options.description;
 
-        // We need to access map's operator[], not the overriden version
-        // variables_map. Ehmm.. messy.
         std::map<std::string, VariableValue>& m = map;
 
         std::set<std::string> new_final;
 
-        // Declared here so can be used to provide context for exceptions
         string option_name;
         string original_token;
 
-
-        // First, convert/store all given options
         for (auto var : options.options)
         {
             option_name = var.string_key;
@@ -47,19 +30,12 @@ namespace  options {
                 var.original_tokens[0] :
                 option_name;
 
-            // Skip positional options without name
             if (option_name.empty())
                 continue;
 
-            // Ignore unregistered option. The 'unregistered'
-            // field can be true only if user has explicitly asked
-            // to allow unregistered options. We can't store them
-            // to variables map (lacking any information about paring), 
-            // so just ignore them.
             if (var.unregistered)
                 continue;
 
-            // If option has final value, skip this assignment
             if (map.m_final.count(option_name))
                 continue;
 
@@ -72,19 +48,13 @@ namespace  options {
             if(!d) continue;
             VariableValue& v = m[option_name];            
             if (v.isDefaulted()) {
-                // Explicit assignment here erases defaulted value
                 v = VariableValue();
             }
                 
-            d->semantic()->parse(v.value(), var.value, utf8);
+            d->semantic()->parse(v.value(), var.value);
 
             v.m_value_semantic = d->semantic();
                 
-            // The option is not composing, and the value is explicitly
-            // provided. Ignore values of this option for subsequent
-            // calls to 'store'. We store this to a temporary set,
-            // so that several assignment inside *this* 'store' call
-            // are allowed.
             if (!d->semantic()->is_composing())
                 new_final.insert(option_name);
         }
@@ -97,11 +67,6 @@ namespace  options {
         {
             const OptionDescription& d = *var;
             string key = d.key("");
-            // FIXME: this logic relies on knowledge of option_description
-            // internals.
-            // The 'key' is empty if options description contains '*'. 
-            // In that 
-            // case, default value makes no sense at all.
             if (key.empty())
             {
                 continue;
@@ -117,11 +82,6 @@ namespace  options {
 
             // add empty value if this is an required option
             if (d.semantic()->is_required()) {
-
-                // For option names specified in multiple ways, e.g. on the command line,
-                // config file etc, the following precedence rules apply:
-                //  "--"  >  ("-" or "/")  >  ""
-                //  Precedence is set conveniently by a single call to length()
                 string canonical_name = d.canonical_display_name(options.m_options_prefix);
                 if (canonical_name.length() > map.m_required[key].length())
                     map.m_required[key] = canonical_name;
@@ -194,7 +154,6 @@ namespace  options {
     void
     VariablesMap::notify()
     {
-        // This checks if all required options occur
         for (map<string, string>::const_iterator r = m_required.begin();
              r != m_required.end();
              ++r)
@@ -204,12 +163,10 @@ namespace  options {
             map<string, VariableValue>::const_iterator iter = find(opt);
             if (iter == end() || iter->second.empty()) 
             {
-                throw exception(required_option(display_opt));
-            
+                return ;
             }
         }
 
-        // Lastly, run notify actions.
         for (map<string, VariableValue>::iterator k = begin(); 
              k != end(); 
              ++k) 
@@ -227,4 +184,9 @@ namespace  options {
         }               
     }
     
+    bool VariablesMap::has(const std::string& name) const
+    {
+    	return std::map<std::string, VariableValue>::count(name) >= 1;
+    }
+
 }
